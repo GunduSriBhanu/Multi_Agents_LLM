@@ -1,0 +1,4 @@
+fastapi[all]
+requests
+python-terraform
+boto3
