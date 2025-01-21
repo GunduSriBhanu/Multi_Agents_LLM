@@ -29,3 +29,20 @@ FastAPi, RestAPI
 ### Logs: 
 AgentOps, Open Telemetry
 
+FastAPI: uvicorn main:app --reload
+"http://127.0.0.1:8000/docs"
+
+CDK: mkdir multi-agents-cdk
+cd multi-agents-cdk
+cdk init app --language python
+source .venv/bin/activate # On Windows, run `.\venv\Scripts\activate` instead
+python -m pip install -r requirements.txt
+
+
+Docker: 
+docker build -t fastapi-app 
+docker run -d -p 8000:8000 fastapi-app
+docker ps
+docker stop fastapi-app
+docker stop $(docker ps -q)
+
