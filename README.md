@@ -31,6 +31,8 @@ AgentOps, Open Telemetry
 
 FastAPI: uvicorn main:app --reload
 "http://127.0.0.1:8000/docs"
+uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
 
 CDK: mkdir multi-agents-cdk
 cd multi-agents-cdk
@@ -45,4 +47,9 @@ docker run -d -p 8000:8000 fastapi-app
 docker ps
 docker stop fastapi-app
 docker stop $(docker ps -q)
+
+Git SSH key:
+ssh-keygen -t rsa -b 4096 -C "sribhanu5june@gmail.com"
+python git_ssh.py --key_title "git_project"
+
 
