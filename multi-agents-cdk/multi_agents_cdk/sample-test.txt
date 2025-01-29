@@ -1,0 +1,167 @@
+
+from aws_cdk import (
+    # Duration,
+    Stack,   
+    RemovalPolicy, 
+    aws_lambda as _lambda,
+    aws_ecr_assets as ecr_assets,
+    aws_ecr as ecr,
+    aws_iam as iam,
+    aws_s3 as s3,
+    # aws_sqs as sqs,
+    aws_ec2 as ec2,
+    CfnOutput,
+    CfnTag,
+)
+from constructs import Construct
+import os 
+
+class MultiAgentsCdkStack(Stack):
+
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        # Create Basic VPC
+        vpc = ec2.Vpc(
+            self,
+            "MyVpc",
+            max_azs=2,
+            subnet_configuration=[
+                ec2.SubnetConfiguration(
+                    name="public-subnet-1",
+                    subnet_type=ec2.SubnetType.PUBLIC,
+                    cidr_mask=24,
+                )
+            ],
+        )
+
+        # Create Security Group
+        sec_group = ec2.SecurityGroup(
+            self,
+            "MySecurityGroup",
+            vpc=vpc,
+            allow_all_outbound=True,  # Allow all outbound traffic
+        )
+
+        # Add Ingress Rule for SSH (Port 22)
+        sec_group.add_ingress_rule(
+            ec2.Peer.any_ipv4(),  # Allow traffic from any IPv4 address
+            ec2.Port.tcp(22),     # Port 22 for SSH
+            "Allow SSH access"
+        )
+
+        # Add Ingress Rule for Port 8000 (Custom Application)
+        sec_group.add_ingress_rule(
+            ec2.Peer.any_ipv4(),  # Allow traffic from any IPv4 address
+            ec2.Port.tcp(8000),   # Port 8000
+            "Allow access to port 8000 from anywhere"
+        )
+
+        # Create Key Pair
+        cfn_key_pair = ec2.CfnKeyPair(
+            self,
+            "MyCfnKeyPair",
+            key_name="cdk-ec2-key-pair-med",
+            tags=[CfnTag(key="key", value="value")],
+        )
+
+        # Create EC2 Instance with Amazon Linux 2023 AMI
+        instance = ec2.Instance(
+            self,
+            "MyInstance",
+            instance_type=ec2.InstanceType("t2.medium"),
+            machine_image=ec2.MachineImage.latest_amazon_linux2023(),
+            vpc=vpc,
+            security_group=sec_group,
+            associate_public_ip_address=True,
+            key_name=cfn_key_pair.key_name,            
+        )
+
+        # Output the Instance ID
+        CfnOutput(
+            self, "InstanceId",
+            value=instance.instance_id,
+            description="Instance ID of the created EC2 instance",
+        )
+
+
+        
+
+        # _lambda.DockerImageFunction(
+        #     self,
+        #     "DockerLambda",
+        #     code=_lambda.DockerImageCode.from_image_asset(r"multi_agents_cdk\lambda\python"),
+        #     function_name="DockerLambdaFunction"
+        # )
+
+        
+        # Create an ECR repository
+        ecr_repository = ecr.Repository(
+            self,
+            "ecr_repository",
+            repository_name="docker-lambda-repository", 
+            # removal_policy=RemovalPolicy.DESTROY                 
+        )
+        
+        # # Build and push Docker image to the ECR repository
+        # docker_image = ecr_assets.DockerImageAsset(
+        #     self,
+        #     "DockerImage",
+        #     directory="multi_agents_cdk/lambda/python"  # Directory containing the Dockerfile
+        # )
+
+        ecr_repository.apply_removal_policy(RemovalPolicy.DESTROY)        
+
+        # Create an S3 bucket for storing data
+        bucket = s3.Bucket(
+            self,
+            "Multi_Agents_Bucket",
+            removal_policy=RemovalPolicy.DESTROY,  # Automatically delete the bucket on `cdk destroy`
+            auto_delete_objects=True,  # Ensure objects are deleted with the bucket
+        )
+       
+        lambda_role.add_to_policy(
+            iam.PolicyStatement(
+                actions=[
+                    "s3:PutObject",
+                    "s3:GetObject",
+                    "s3:DeleteObject",
+                    "s3:ListBucket"
+                ],
+                resources=[
+                    bucket.bucket_arn,  # Bucket itself
+                    f"{bucket.bucket_arn}/*"  # Objects inside the bucket
+                ]
+            )
+        )        
+       
+
+        # Create a Docker-based Lambda function
+        docker_lambda = _lambda.DockerImageFunction(
+            self,
+            "DockerLambda",
+            code=_lambda.DockerImageCode.from_image_asset(r"multi_agents_cdk\lambda\python"),
+            function_name="DockerLambdaFunction"
+        )
+
+       # Outputs for debugging or use in other stacks
+        CfnOutput(
+            self, "LambdaFunctionArn",
+            value=docker_lambda.function_arn,
+            description="ARN of the created Docker-based Lambda function"
+        )
+
+        CfnOutput(
+            self, "S3BucketName",
+            value=bucket.bucket_name,
+            description="Name of the S3 bucket"
+        )
+
+        CfnOutput(
+            self, "EcrRepositoryUri",
+            value=ecr_repository.repository_uri,
+            description="URI of the ECR repository"
+        )
+
+
+        
