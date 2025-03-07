@@ -1,0 +1,30 @@
+sudo yum groupinstall -y "Development Tools"
+sudo yum install -y gcc libffi-devel bzip2 bzip2-devel zlib-devel xz-devel wget
+sudo wget https://www.python.org/ftp/python/3.12.0/Python-3.12.0.tgz
+sudo tar xzf Python-3.12.0.tgz
+cd Python-3.12.0
+sudo ./configure --enable-optimizations
+sudo make altinstall
+
+
+ssh-keygen -t rsa -b 4096 -C "sribhanu5june@gmail.com"
+cat ~/.ssh/id_rsa.pub
+ssh -T git@github.com
+sudo yum update -y
+sudo yum install git -y
+git clone git@github.com:username/repository-name.git
+
+
+sudo yum groupinstall "Development Tools" -y
+sudo yum install gcc zlib-devel bzip2 bzip2-devel readline-devel sqlite sqlite-devel openssl-devel xz xz-devel libffi-devel -y
+wget https://www.python.org/ftp/python/3.12.0/Python-3.12.0.tgz
+tar xzf Python-3.12.0.tgz
+cd Python-3.12.0
+./configure --enable-optimizations
+make
+sudo make altinstall
+python3.12 -m ssl
+
+aws ec2 describe-instances --query "Reservations[*].Instances[*].[InstanceId, PublicIpAddress, PrivateIpAddress, State.Name]" --output table
+
+aws ec2-instance-connect ssh --instance-id i-0ead661d7d67a4aca
